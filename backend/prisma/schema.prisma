@@ -1,0 +1,126 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  CUSTOMER
+  ADMIN
+}
+
+enum OrderStatus {
+  PREPARING
+  OUT_FOR_DELIVERY
+  DELIVERED
+  CANCELLED
+}
+
+model User {
+  id             String   @id @default(cuid())
+  email          String   @unique
+  passwordHash   String
+  name           String?
+  phone          String?
+  defaultAddress String?
+  role           Role     @default(CUSTOMER)
+  createdAt      DateTime @default(now())
+  orders         Order[]
+}
+
+model Bouquet {
+  id          String   @id
+  name        String
+  price       Int
+  defaultSize String
+  eco         Boolean  @default(false)
+  description String
+  imageUrl    String
+  tags        BouquetTag[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model BouquetTag {
+  id        String  @id @default(cuid())
+  tag       String
+  bouquetId String
+  bouquet   Bouquet @relation(fields: [bouquetId], references: [id], onDelete: Cascade)
+
+  @@unique([bouquetId, tag])
+}
+
+model Order {
+  id             String      @id @default(cuid())
+  publicId       String      @unique
+  userId         String
+  user           User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  eventName      String
+  total          Int
+  status         OrderStatus @default(PREPARING)
+  date           String
+  deliveryWindow String
+  eco            Boolean     @default(false)
+  address        String
+  phone          String?
+  note           String?
+
+  items          OrderItem[]
+  updates        OrderUpdate[]
+  payment        Payment?
+  notifications  Notification[]
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model OrderItem {
+  id            String  @id @default(cuid())
+  orderId       String
+  order         Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  bouquetId     String?
+  nameSnapshot  String
+  qty           Int
+  priceSnapshot Int
+  ecoOnly       Boolean @default(false)
+  size          String?
+
+  createdAt     DateTime @default(now())
+}
+
+model OrderUpdate {
+  id        String @id @default(cuid())
+  orderId   String
+  order     Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  time      String
+  text      String
+  createdAt DateTime @default(now())
+}
+
+model Payment {
+  id             String @id @default(cuid())
+  orderId        String @unique
+  order          Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  provider       String
+  status         String
+  amount         Int
+  transactionRef String
+  createdAt      DateTime @default(now())
+}
+
+model Notification {
+  id        String @id @default(cuid())
+  orderId   String
+  order     Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  channel   String
+  message   String
+  createdAt DateTime @default(now())
+}

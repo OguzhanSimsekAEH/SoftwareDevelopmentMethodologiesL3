@@ -1,0 +1,15 @@
+services:
+  db:
+    image: postgres:16
+    container_name: astral_bloom_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: astral_bloom
+    ports:
+      - "5432:5432"
+    volumes:
+      - astral_bloom_pg:/var/lib/postgresql/data
+
+volumes:
+  astral_bloom_pg:
